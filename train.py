@@ -61,18 +61,18 @@ def train(config):
     datasets = {"train": [], "validation": []}
     for i, dataset_name_or_path in enumerate(config.dataset_name_or_paths):
         task_name = os.path.basename(dataset_name_or_path)  # e.g., cord-v2, docvqa, rvlcdip, ...
-        
+
         # add categorical special tokens (optional)
         if task_name == "rvlcdip":
             model_module.model.decoder.add_special_tokens([
-                "<advertisement/>", "<budget/>", "<email/>", "<file_folder/>", 
-                "<form/>", "<handwritten/>", "<invoice/>", "<letter/>", 
-                "<memo/>", "<news_article/>", "<presentation/>", "<questionnaire/>", 
+                "<advertisement/>", "<budget/>", "<email/>", "<file_folder/>",
+                "<form/>", "<handwritten/>", "<invoice/>", "<letter/>",
+                "<memo/>", "<news_article/>", "<presentation/>", "<questionnaire/>",
                 "<resume/>", "<scientific_publication/>", "<scientific_report/>", "<specification/>"
             ])
         if task_name == "docvqa":
             model_module.model.decoder.add_special_tokens(["<yes/>", "<no/>"])
-            
+
         for split in ["train", "validation"]:
             datasets[split].append(
                 DonutDataset(
@@ -117,7 +117,8 @@ def train(config):
         num_nodes=config.get("num_nodes", 1),
         gpus=torch.cuda.device_count(),
         strategy="ddp",
-        accelerator="gpu",
+        num_processes=3,
+        accelerator="cpu",
         plugins=custom_ckpt,
         max_epochs=config.max_epochs,
         max_steps=config.max_steps,
@@ -142,6 +143,7 @@ if __name__ == "__main__":
     config = Config(args.config)
     config.argv_update(left_argv)
 
+    config.dataset_name_or_paths = [config.dataset_name_or_paths]
     config.exp_name = basename(args.config).split(".")[0]
     config.exp_version = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") if not args.exp_version else args.exp_version
 
